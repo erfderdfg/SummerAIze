@@ -1,4 +1,4 @@
-# 🤖 AI Conversation Summarizer - VS Code Extension
+# 🤖 SummerAIze
 
 A powerful VS Code extension that automatically summarizes selected text using AI and displays organized summaries in a convenient sidebar panel. Perfect for developers, researchers, and anyone who works with large amounts of text content.
 
