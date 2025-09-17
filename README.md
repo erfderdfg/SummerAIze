@@ -34,7 +34,3 @@ A powerful VS Code extension that automatically summarizes selected text using A
 - **Observer Pattern**: Tree view updates through event emitters  
 - **Command Pattern**: VS Code commands for user interactions
 - **Factory Pattern**: AI service creation based on configuration
-
-[⬆ Back to Top](#-ai-conversation-summarizer---vs-code-extension)
-
-</div>
