@@ -1,28 +1,40 @@
-# SummerAIze: AI Conversation Summarizer - VS Code Extension
+# 🤖 AI Conversation Summarizer - VS Code Extension
 
-SummerAIze is a powerful VS Code extension that summarizes AI conversations and displays them in an organized sidebar with a clean table/list view. It helps you keep track of important insights from your conversations, supporting multiple AI providers and flexible export options.  
+A powerful VS Code extension that automatically summarizes selected text using AI and displays organized summaries in a convenient sidebar panel. Perfect for developers, researchers, and anyone who works with large amounts of text content.
 
----
+## ✨ Features
 
-## 🚀 Features
-- **Sidebar Integration**: Summaries displayed in VS Code’s Explorer sidebar  
-- **Multiple AI Providers**: Supports **Ollama (local)**, **OpenAI**, and **Hugging Face**  
-- **Smart Summarization**: Configurable summary length (1–5 sentences)  
-- **Auto-Summarize**: Automatically summarize selected text (optional)  
-- **Export Options**: Export summaries as **Markdown**, **JSON**, or **plain text**  
-- **Persistent Storage**: Summaries are retained between sessions  
-- **Word Count Tracking**: View original text word count  
-- **Time Stamps**: Track when each summary was created  
-- **Context Menu Support**: Right-click → summarize selected text  
+- **Smart Text Summarization**: Select any text and get concise, AI-powered summaries
+- **Sidebar Panel**: Dedicated Explorer panel to view and manage all your summaries
+- **Multiple AI Providers**: Support for Ollama (local), OpenAI, Hugging Face, and mock summarization
+- **Detailed View**: Click any summary to open full details in a new document
+- **Persistent Storage**: Summaries are saved between VS Code sessions
+- **Real-time Updates**: Instant sidebar updates when new summaries are created
+- **Performance**: Efficient processing with progress indicators
 
----
+## 🛠️ Technology Stack
 
-## 🛠️ Tech Stack
-- **Languages**: TypeScript
-- **APIs & Frameworks**:  
-  - [VS Code Extension API](https://code.visualstudio.com/api)  
-  - [Ollama API](https://ollama.ai) (local inference)  
-  - [OpenAI API](https://platform.openai.com/docs)  
-  - [Hugging Face Inference API](https://huggingface.co/inference-api)  
-- **Server**: Node.js 
-- **Storage**: VS Code Global State + JSON serialization
+### Core Technologies
+- **[TypeScript](https://www.typescriptlang.org/)** - Type-safe development with modern JavaScript features
+- **[VS Code Extension API](https://code.visualstudio.com/api)** - Native VS Code integration and UI components
+- **[Node.js](https://nodejs.org/)** - Runtime environment for extension logic
+
+### AI Integration
+- **[Ollama](https://ollama.ai/)** - Local AI models (recommended for privacy)
+- **[OpenAI API](https://openai.com/api/)** - Cloud-based GPT models
+
+### Development Tools
+- **[npm](https://www.npmjs.com/)** - Package management and script automation
+- **[TypeScript Compiler](https://www.typescriptlang.org/docs/handbook/compiler-options.html)** - Code compilation and type checking
+- **[VS Code Extension Generator](https://github.com/Microsoft/vscode-generator-code)** - Project scaffolding
+
+## 🎨 Architecture Overview
+### Design Patterns
+- **Dependency Injection**: Services passed to components that need them
+- **Observer Pattern**: Tree view updates through event emitters  
+- **Command Pattern**: VS Code commands for user interactions
+- **Factory Pattern**: AI service creation based on configuration
+
+[⬆ Back to Top](#-ai-conversation-summarizer---vs-code-extension)
+
+</div>
