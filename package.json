@@ -1,49 +1,48 @@
 {
   "name": "ai-conversation-summarizer",
   "displayName": "AI Conversation Summarizer",
-  "description": "Summarizes AI conversations and displays them in a sidebar table",
+  "description": "Summarizes AI conversations and displays them in a sidebar",
   "version": "1.0.0",
-  "publisher": "your-publisher-name",
+  "publisher": "Molly",
   "engines": {
     "vscode": "^1.74.0"
   },
-  "categories": [
-    "Other",
-    "Machine Learning"
-  ],
+  "categories": ["Other"],
+  "activationEvents": ["*"],
   "main": "./out/extension.js",
-  "activationEvents": [
-    "*"
-  ],
   "contributes": {
     "commands": [
-      {
-        "command": "aiSummarizer.refresh",
-        "title": "Refresh",
-        "icon": "$(refresh)"
-      },
       {
         "command": "aiSummarizer.summarizeText",
         "title": "Summarize Selected Text",
         "icon": "$(symbol-text)"
       },
       {
+        "command": "aiSummarizer.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)"
+      },
+      {
         "command": "aiSummarizer.clearSummaries",
-        "title": "Clear All Summaries",
+        "title": "Clear All",
         "icon": "$(trash)"
       },
       {
-        "command": "aiSummarizer.exportSummaries",
-        "title": "Export Summaries",
-        "icon": "$(export)"
+        "command": "aiSummarizer.openSummary",
+        "title": "Open Summary",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "aiSummarizer.showSummary",
+        "title": "Show Summary Details",
+        "icon": "$(info)"
       }
     ],
     "views": {
       "explorer": [
         {
           "id": "aiSummarizerView",
-          "name": "AI Conversation Summaries",
-          "when": "workspaceHasAnyFile"
+          "name": "🤖 AI Summaries"
         }
       ]
     },
@@ -55,12 +54,7 @@
           "group": "navigation"
         },
         {
-          "command": "aiSummarizer.clearSummaries",
-          "when": "view == aiSummarizerView",
-          "group": "navigation"
-        },
-        {
-          "command": "aiSummarizer.exportSummaries",
+          "command": "aiSummarizer.clearSummaries", 
           "when": "view == aiSummarizerView",
           "group": "navigation"
         }
@@ -71,28 +65,19 @@
           "when": "editorHasSelection",
           "group": "1_modification"
         }
-      ]
-    },
-    "configuration": {
-      "title": "AI Conversation Summarizer",
-      "properties": {
-        "aiSummarizer.provider": {
-          "type": "string",
-          "default": "mock",
-          "enum": ["ollama", "openai", "mock"],
-          "description": "AI provider to use for summarization"
+      ],
+      "view/item/context": [
+        {
+          "command": "aiSummarizer.openSummary",
+          "when": "view == aiSummarizerView",
+          "group": "inline"
         },
-        "aiSummarizer.model": {
-          "type": "string",
-          "default": "llama2",
-          "description": "Model to use for summarization"
-        },
-        "aiSummarizer.maxSummaryLength": {
-          "type": "number",
-          "default": 3,
-          "description": "Maximum number of sentences in summary"
+        {
+          "command": "aiSummarizer.showSummary", 
+          "when": "view == aiSummarizerView",
+          "group": "inline"
         }
-      }
+      ]
     }
   },
   "scripts": {

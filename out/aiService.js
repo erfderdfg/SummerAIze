@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AIService = void 0;
 // === src/aiService.ts ===
 const vscode = require("vscode");
+const https = require("https");
 const http = require("http");
 class AIService {
     constructor() {
@@ -14,6 +15,8 @@ class AIService {
         switch (provider) {
             case 'ollama':
                 return this.summarizeWithOllama(text, maxLength);
+            case 'openai':
+                return this.summarizeWithOpenAI(text, maxLength);
             default:
                 return this.createMockSummary(text, maxLength);
         }
@@ -68,6 +71,65 @@ class AIService {
                 else {
                     reject(new Error(`Ollama request failed: ${error.message}`));
                 }
+            });
+            req.write(postData);
+            req.end();
+        });
+    }
+    async summarizeWithOpenAI(text, maxLength) {
+        const apiKey = process.env.OPENAI_API_KEY;
+        if (!apiKey) {
+            throw new Error('OpenAI API key not found in environment variables');
+        }
+        const postData = JSON.stringify({
+            model: 'gpt-3.5-turbo',
+            messages: [
+                {
+                    role: 'system',
+                    content: `You are a helpful assistant that summarizes text in exactly ${maxLength} sentences.`
+                },
+                {
+                    role: 'user',
+                    content: `Summarize this text: ${text}`
+                }
+            ],
+            max_tokens: 150,
+            temperature: 0.3
+        });
+        return new Promise((resolve, reject) => {
+            const options = {
+                hostname: 'api.openai.com',
+                port: 443,
+                path: '/v1/chat/completions',
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json',
+                    'Content-Length': Buffer.byteLength(postData)
+                }
+            };
+            const req = https.request(options, (res) => {
+                let data = '';
+                res.on('data', (chunk) => {
+                    data += chunk;
+                });
+                res.on('end', () => {
+                    try {
+                        const jsonData = JSON.parse(data);
+                        if (jsonData.choices && jsonData.choices[0].message) {
+                            resolve(this.cleanSummary(jsonData.choices[0].message.content));
+                        }
+                        else {
+                            reject(new Error('Invalid response from OpenAI'));
+                        }
+                    }
+                    catch (error) {
+                        reject(new Error(`Failed to parse OpenAI response: ${error}`));
+                    }
+                });
+            });
+            req.on('error', (error) => {
+                reject(new Error(`OpenAI request failed: ${error.message}`));
             });
             req.write(postData);
             req.end();
