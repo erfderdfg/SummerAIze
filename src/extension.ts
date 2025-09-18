@@ -1,44 +1,50 @@
 import * as vscode from 'vscode';
-
-interface Summary {
-    id: string;
-    text: string;
-    summary: string;
-    timestamp: Date;
-}
+import { Summary } from './types';
+import { AIService } from './aiService';
 
 class SummaryProvider implements vscode.TreeDataProvider<Summary> {
     private _onDidChangeTreeData: vscode.EventEmitter<Summary | undefined | null | void> = new vscode.EventEmitter<Summary | undefined | null | void>();
     readonly onDidChangeTreeData: vscode.Event<Summary | undefined | null | void> = this._onDidChangeTreeData.event;
 
-    public summaries: Summary[] = []; // Make it public so we can access it
+    public summaries: Summary[] = [];
+    private context: vscode.ExtensionContext;
+    private aiService: AIService;
 
-    constructor() {
-        console.log('🔧 SummaryProvider created');
-        // Add startup summaries to make sidebar visible immediately
-        this.addStartupSummaries();
+    constructor(context: vscode.ExtensionContext, aiService: AIService) {
+        this.context = context;
+        this.aiService = aiService;
+        console.log('SummaryProvider initialized');
+        this.loadSummaries();
+        if (this.summaries.length === 0) {
+            this.addWelcomeSummaries();
+        }
     }
 
-    private addStartupSummaries(): void {
+    private addWelcomeSummaries(): void {
         this.summaries = [
             {
                 id: 'welcome',
                 text: 'Welcome to AI Conversation Summarizer! This extension helps you summarize selected text.',
                 summary: 'Welcome! Extension is ready to summarize your text selections.',
-                timestamp: new Date()
+                timestamp: new Date(),
+                wordCount: 12,
+                source: 'welcome'
             },
             {
                 id: 'instructions',
                 text: 'To use: 1. Select some text in any file 2. Right-click 3. Choose "Summarize Selected Text" 4. View results here',
-                summary: 'Instructions: Select text → Right-click → Summarize Selected Text',
-                timestamp: new Date()
+                summary: 'Instructions: Select text, right-click, then choose Summarize Selected Text',
+                timestamp: new Date(),
+                wordCount: 20,
+                source: 'welcome'
             }
         ];
-        console.log(`✅ Added ${this.summaries.length} startup summaries`);
+        console.log(`Added ${this.summaries.length} welcome messages`);
+        this.saveSummaries();
     }
 
     refresh(): void {
-        console.log('🔄 Refreshing tree view');
+        console.log('Refreshing summary list');
         this._onDidChangeTreeData.fire();
     }
 
@@ -53,7 +59,7 @@ class SummaryProvider implements vscode.TreeDataProvider<Summary> {
         item.tooltip = `Summary: ${element.summary}\n\nOriginal Text: ${element.text}\n\nCreated: ${element.timestamp.toLocaleString()}`;
         item.iconPath = new vscode.ThemeIcon('file-text');
         
-        // Make the item clickable
+        // Make items clickable to open details
         item.command = {
             command: 'aiSummarizer.openSummary',
             title: 'Open Summary',
@@ -64,72 +70,95 @@ class SummaryProvider implements vscode.TreeDataProvider<Summary> {
     }
 
     getChildren(element?: Summary): Thenable<Summary[]> {
-        console.log(`📋 getChildren called - returning ${this.summaries.length} summaries`);
+        console.log(`Returning ${this.summaries.length} summaries`);
         return Promise.resolve(this.summaries);
     }
 
-    addSummary(text: string): void {
-        console.log(`➕ Adding summary for: ${text.substring(0, 50)}...`);
+    async addSummary(text: string, source?: string): Promise<void> {
+        console.log(`Adding summary for: ${text.substring(0, 50)}...`);
         
-        // Create a simple extractive summary
-        const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 5);
-        let summary = '';
-        
-        if (sentences.length > 0) {
-            summary = sentences[0].trim() + '.';
-            if (sentences.length > 1 && summary.length < 80) {
-                summary += ' ' + sentences[1].trim() + '.';
-            }
-        } else {
-            const words = text.split(' ').filter(w => w.length > 2);
-            summary = `Summary of ${words.length} words: ${words.slice(0, 10).join(' ')}...`;
-        }
-        
-        const newSummary: Summary = {
-            id: `summary_${Date.now()}`,
-            text: text.trim(),
-            summary: summary,
-            timestamp: new Date()
-        };
+        try {
+            // Use AI service to create summary
+            const summaryText = await this.aiService.summarize(text);
+            
+            const newSummary: Summary = {
+                id: `summary_${Date.now()}`,
+                text: text.trim(),
+                summary: summaryText,
+                timestamp: new Date(),
+                wordCount: text.trim().split(/\s+/).length,
+                source: source || 'manual'
+            };
 
-        this.summaries.unshift(newSummary);
-        console.log(`✅ Summary added. Total: ${this.summaries.length}`);
-        this.refresh();
+            this.summaries.unshift(newSummary);
+            console.log(`Summary added. Total summaries: ${this.summaries.length}`);
+            await this.saveSummaries();
+            this.refresh();
+        } catch (error: any) {
+            console.error('Failed to add summary:', error);
+            vscode.window.showErrorMessage(`Failed to create summary: ${error.message}`);
+        }
     }
 
     clearAll(): void {
-        console.log('🗑️ Clearing all summaries');
+        console.log('Clearing all summaries');
         this.summaries = [];
-        this.addStartupSummaries(); // Add back welcome messages
+        this.addWelcomeSummaries();
         this.refresh();
     }
 
     getSummaryCount(): number {
         return this.summaries.length;
     }
+
+    private async loadSummaries(): Promise<void> {
+        try {
+            const saved = this.context.globalState.get<Summary[]>('summaries', []);
+            // Convert timestamp strings back to Date objects
+            this.summaries = saved.map(s => ({
+                ...s,
+                timestamp: new Date(s.timestamp)
+            }));
+            console.log(`Loaded ${this.summaries.length} saved summaries`);
+        } catch (error) {
+            console.error('Failed to load summaries:', error);
+            this.summaries = [];
+        }
+    }
+
+    private async saveSummaries(): Promise<void> {
+        try {
+            await this.context.globalState.update('summaries', this.summaries);
+            console.log(`Saved ${this.summaries.length} summaries`);
+        } catch (error) {
+            console.error('Failed to save summaries:', error);
+        }
+    }
 }
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('🚀 AI Conversation Summarizer activating...');
+    console.log('AI Conversation Summarizer is starting up...');
 
-    const summaryProvider = new SummaryProvider();
+    // Initialize services
+    const aiService = new AIService();
+    const summaryProvider = new SummaryProvider(context, aiService);
     
-    // Register tree view
-    console.log('📋 Registering tree data provider...');
+    // Create the sidebar panel
+    console.log('Setting up sidebar panel...');
     const treeView = vscode.window.createTreeView('aiSummarizerView', {
         treeDataProvider: summaryProvider,
         showCollapseAll: false
     });
     
-    console.log('✅ Tree view created successfully');
+    console.log('Sidebar panel ready');
 
-    // Register commands
-    const summarizeCommand = vscode.commands.registerCommand('aiSummarizer.summarizeText', () => {
-        console.log('📝 Summarize command triggered');
+    // Handle text summarization
+    const summarizeCommand = vscode.commands.registerCommand('aiSummarizer.summarizeText', async () => {
+        console.log('User requested text summarization');
         
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
-            vscode.window.showErrorMessage('No text editor is active');
+            vscode.window.showErrorMessage('No text editor is open');
             return;
         }
 
@@ -141,41 +170,61 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         }
 
-        console.log(`📄 Processing text: ${selectedText.substring(0, 100)}...`);
-        summaryProvider.addSummary(selectedText);
-        vscode.window.showInformationMessage('✅ Text summarized! Check the AI Summaries panel.');
-    });
-
-    const refreshCommand = vscode.commands.registerCommand('aiSummarizer.refresh', () => {
-        console.log('🔄 Refresh command triggered');
-        summaryProvider.refresh();
-        vscode.window.showInformationMessage('🔄 Summaries refreshed');
-    });
-
-    const clearCommand = vscode.commands.registerCommand('aiSummarizer.clearSummaries', () => {
-        console.log('🗑️ Clear command triggered');
-        summaryProvider.clearAll();
-        vscode.window.showInformationMessage('🗑️ Summaries cleared');
-    });
-
-    // Add command to open summary details
-    const openSummaryCommand = vscode.commands.registerCommand('aiSummarizer.openSummary', (summary: Summary) => {
-        console.log(`📖 Opening summary: ${summary.id}`);
+        console.log(`Processing ${selectedText.length} characters of text`);
         
-        // Find the index of the summary
+        // Show progress while summarizing
+        vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: "Creating summary...",
+            cancellable: false
+        }, async (progress) => {
+            await summaryProvider.addSummary(selectedText, 'editor');
+        });
+
+        vscode.window.showInformationMessage('Text summarized successfully! Check the AI Summaries panel.');
+    });
+
+    // Handle list refresh
+    const refreshCommand = vscode.commands.registerCommand('aiSummarizer.refresh', () => {
+        console.log('User requested refresh');
+        summaryProvider.refresh();
+        vscode.window.showInformationMessage('Summary list refreshed');
+    });
+
+    // Handle clear all summaries
+    const clearCommand = vscode.commands.registerCommand('aiSummarizer.clearSummaries', async () => {
+        console.log('User requested clear all');
+        const result = await vscode.window.showWarningMessage(
+            'Are you sure you want to clear all summaries?',
+            { modal: true },
+            'Clear All'
+        );
+        
+        if (result === 'Clear All') {
+            summaryProvider.clearAll();
+            vscode.window.showInformationMessage('All summaries cleared');
+        }
+    });
+
+    // Handle opening summary details
+    const openSummaryCommand = vscode.commands.registerCommand('aiSummarizer.openSummary', (summary: Summary) => {
+        console.log(`Opening detailed view for summary: ${summary.id}`);
+        
         const summaryIndex = summaryProvider.summaries.indexOf(summary) + 1;
         
-        // Create a new document with the summary details
+        // Create detailed view in new document
         const content = `# Summary ${summaryIndex}
 
-## 📝 Summary
+## Summary
 ${summary.summary}
 
-## 📄 Original Text
+## Original Text
 ${summary.text}
 
-## 🕐 Created
-${summary.timestamp.toLocaleString()}
+## Details
+- **Word Count**: ${summary.wordCount} words
+- **Created**: ${summary.timestamp.toLocaleString()}
+- **Source**: ${summary.source || 'Manual'}
 
 ---
 *Generated by AI Conversation Summarizer*
@@ -189,11 +238,11 @@ ${summary.timestamp.toLocaleString()}
         });
     });
 
-    // Alternative: Show in a popup instead
+    // Handle showing summary in popup
     const showSummaryCommand = vscode.commands.registerCommand('aiSummarizer.showSummary', (summary: Summary) => {
-        console.log(`👁️ Showing summary: ${summary.id}`);
+        console.log(`Showing popup for summary: ${summary.id}`);
         
-        const message = `📝 ${summary.summary}\n\n📄 Original: ${summary.text.substring(0, 100)}${summary.text.length > 100 ? '...' : ''}\n\n🕐 ${summary.timestamp.toLocaleString()}`;
+        const message = `Summary: ${summary.summary}\n\nOriginal: ${summary.text.substring(0, 100)}${summary.text.length > 100 ? '...' : ''}\n\nCreated: ${summary.timestamp.toLocaleString()}`;
         
         vscode.window.showInformationMessage(
             message,
@@ -203,15 +252,15 @@ ${summary.timestamp.toLocaleString()}
         ).then(selection => {
             if (selection === 'Copy Summary') {
                 vscode.env.clipboard.writeText(summary.summary);
-                vscode.window.showInformationMessage('Summary copied to clipboard!');
+                vscode.window.showInformationMessage('Summary copied to clipboard');
             } else if (selection === 'Copy Original') {
                 vscode.env.clipboard.writeText(summary.text);
-                vscode.window.showInformationMessage('Original text copied to clipboard!');
+                vscode.window.showInformationMessage('Original text copied to clipboard');
             }
         });
     });
 
-    // Add all to subscriptions
+    // Register all commands
     context.subscriptions.push(
         treeView,
         summarizeCommand,
@@ -221,15 +270,19 @@ ${summary.timestamp.toLocaleString()}
         showSummaryCommand
     );
 
-    console.log('✅ AI Conversation Summarizer activated successfully!');
+    console.log('AI Conversation Summarizer is ready');
     
-    // Show success message
+    // Show welcome message
     vscode.window.showInformationMessage(
-        '🤖 AI Summarizer is ready! Look for "🤖 AI Summaries" in the Explorer panel.',
+        'AI Summarizer is ready! Look for "AI Summaries" in the Explorer panel.',
         'Show Panel'
     ).then(selection => {
         if (selection === 'Show Panel') {
             vscode.commands.executeCommand('workbench.view.explorer');
         }
     });
+}
+
+export function deactivate() {
+    console.log('AI Conversation Summarizer stopped');
 }
