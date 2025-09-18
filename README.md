@@ -1,36 +1,53 @@
-# 🤖 SummerAIze
+# SummerAIze
 
-A powerful VS Code extension that automatically summarizes selected text using AI and displays organized summaries in a convenient sidebar panel. Perfect for developers, researchers, and anyone who works with large amounts of text content.
+SummerAIze is a Visual Studio Code extension that generates concise summaries of selected text using AI. Summaries are stored and organized within a dedicated sidebar, making it easier to manage and review information. This tool is useful for developers, researchers, and students who frequently work with large volumes of text.
 
-## ✨ Features
+## Features
 
-- **Smart Text Summarization**: Select any text and get concise, AI-powered summaries
-- **Sidebar Panel**: Dedicated Explorer panel to view and manage all your summaries
-- **Multiple AI Providers**: Support for Ollama (local), OpenAI, Hugging Face, and mock summarization
-- **Detailed View**: Click any summary to open full details in a new document
-- **Persistent Storage**: Summaries are saved between VS Code sessions
-- **Real-time Updates**: Instant sidebar updates when new summaries are created
-- **Performance**: Efficient processing with progress indicators
+Automated Summarization: Select text and receive clear, AI-generated summaries.
 
-## 🛠️ Technology Stack
+Sidebar Integration: View, organize, and manage all summaries in a separate Explorer panel.
 
-### Core Technologies
-- **[TypeScript](https://www.typescriptlang.org/)** - Type-safe development with modern JavaScript features
-- **[VS Code Extension API](https://code.visualstudio.com/api)** - Native VS Code integration and UI components
-- **[Node.js](https://nodejs.org/)** - Runtime environment for extension logic
+AI Provider Options: Compatible with Ollama (local), OpenAI, Hugging Face, and mock summarization for testing.
 
-### AI Integration
-- **[Ollama](https://ollama.ai/)** - Local AI models (recommended for privacy)
-- **[OpenAI API](https://openai.com/api/)** - Cloud-based GPT models
+Detailed Viewing: Open any summary in a new document for full details.
 
-### Development Tools
-- **[npm](https://www.npmjs.com/)** - Package management and script automation
-- **[TypeScript Compiler](https://www.typescriptlang.org/docs/handbook/compiler-options.html)** - Code compilation and type checking
-- **[VS Code Extension Generator](https://github.com/Microsoft/vscode-generator-code)** - Project scaffolding
+Persistent Storage: Summaries remain available between VS Code sessions.
 
-## 🎨 Architecture Overview
-### Design Patterns
-- **Dependency Injection**: Services passed to components that need them
-- **Observer Pattern**: Tree view updates through event emitters  
-- **Command Pattern**: VS Code commands for user interactions
-- **Factory Pattern**: AI service creation based on configuration
+Real-time Updates: Sidebar automatically refreshes as new summaries are created.
+
+Efficient Processing: Optimized for performance with progress indicators.
+
+## Technology Stack
+Core Technologies
+
+TypeScript – Strongly typed development with modern JavaScript features.
+
+VS Code Extension API – Provides integration with VS Code and access to UI components.
+
+Node.js – Runtime environment for executing extension logic.
+
+## AI Integration
+
+Ollama – Local AI models, recommended for improved privacy.
+
+OpenAI API – Cloud-based GPT models for text summarization.
+
+## Development Tools
+
+npm – Package management and automation of scripts.
+
+TypeScript Compiler – Handles code compilation and type checking.
+
+VS Code Extension Generator – Provides scaffolding for extension development.
+
+## Architecture Overview
+## Design Patterns
+
+Dependency Injection – Services are supplied to components that require them.
+
+Observer Pattern – Sidebar tree view updates are triggered by event emitters.
+
+Command Pattern – Implements VS Code commands for user actions.
+
+Factory Pattern – AI services are created dynamically based on configuration.
