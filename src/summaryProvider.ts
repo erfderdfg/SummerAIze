@@ -1,16 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import * as fs from 'fs';
+import { Summary } from './types';
 import { AIService } from './aiService';
-
-export interface Summary {
-    id: string;
-    originalText: string;
-    summary: string;
-    timestamp: Date;
-    wordCount: number;
-    source?: string;
-}
 
 export class SummaryItem extends vscode.TreeItem {
     constructor(
@@ -23,7 +14,7 @@ export class SummaryItem extends vscode.TreeItem {
         this.description = this.createDescription();
         this.contextValue = 'summaryItem';
         
-        // Set icon based on word count
+        // Choose icon based on text length
         if (summary.wordCount > 500) {
             this.iconPath = new vscode.ThemeIcon('file-text');
         } else if (summary.wordCount > 100) {
@@ -95,14 +86,14 @@ export class SummaryProvider implements vscode.TreeDataProvider<SummaryItem | Su
 
     getChildren(element?: SummaryItem | SummaryDetailItem): Thenable<(SummaryItem | SummaryDetailItem)[]> {
         if (!element) {
-            // Root level - show all summaries
+            // Show all summaries at root level
             return Promise.resolve(
                 this.summaries.map(summary => 
                     new SummaryItem(summary, vscode.TreeItemCollapsibleState.Collapsed)
                 )
             );
         } else if (element instanceof SummaryItem) {
-            // Show summary details
+            // Show details when summary is expanded
             const summary = element.summary;
             return Promise.resolve([
                 new SummaryDetailItem('Summary', summary.summary.substring(0, 100) + '...'),
@@ -115,20 +106,20 @@ export class SummaryProvider implements vscode.TreeDataProvider<SummaryItem | Su
         return Promise.resolve([]);
     }
 
-    async addSummary(originalText: string, source?: string): Promise<void> {
+    async addSummary(text: string, source?: string): Promise<void> {
         try {
-            const summaryText = await this.aiService.summarize(originalText);
+            const summaryText = await this.aiService.summarize(text);
             
             const summary: Summary = {
                 id: this.generateId(),
-                originalText: originalText.trim(),
+                text: text.trim(),
                 summary: summaryText.trim(),
                 timestamp: new Date(),
-                wordCount: originalText.trim().split(/\s+/).length,
+                wordCount: text.trim().split(/\s+/).length,
                 source
             };
 
-            this.summaries.unshift(summary); // Add to beginning
+            this.summaries.unshift(summary);
             await this.saveSummaries();
             this.refresh();
         } catch (error) {
@@ -190,7 +181,7 @@ export class SummaryProvider implements vscode.TreeDataProvider<SummaryItem | Su
             markdown += `**Word Count:** ${summary.wordCount}\n`;
             markdown += `**Source:** ${summary.source || 'Manual Selection'}\n\n`;
             markdown += `### Summary\n${summary.summary}\n\n`;
-            markdown += `### Original Text\n${summary.originalText}\n\n---\n\n`;
+            markdown += `### Original Text\n${summary.text}\n\n---\n\n`;
         });
 
         return markdown;
@@ -209,7 +200,7 @@ export class SummaryProvider implements vscode.TreeDataProvider<SummaryItem | Su
             text += `Word Count: ${summary.wordCount}\n`;
             text += `Source: ${summary.source || 'Manual Selection'}\n\n`;
             text += `Summary: ${summary.summary}\n\n`;
-            text += `Original: ${summary.originalText}\n\n`;
+            text += `Original: ${summary.text}\n\n`;
             text += '='.repeat(50) + '\n\n';
         });
 
@@ -226,13 +217,13 @@ export class SummaryProvider implements vscode.TreeDataProvider<SummaryItem | Su
             const jsonStr = Buffer.from(data).toString('utf8');
             const parsed = JSON.parse(jsonStr);
             
-            // Convert timestamp strings back to Date objects
+            // Convert saved timestamps back to Date objects
             this.summaries = parsed.map((s: any) => ({
                 ...s,
                 timestamp: new Date(s.timestamp)
             }));
         } catch (error) {
-            // File doesn't exist yet or is corrupted
+            // Start with empty list if no saved data
             this.summaries = [];
         }
     }

@@ -11,7 +11,7 @@ class SummaryItem extends vscode.TreeItem {
         this.tooltip = this.createTooltip();
         this.description = this.createDescription();
         this.contextValue = 'summaryItem';
-        // Set icon based on word count
+        // Choose icon based on text length
         if (summary.wordCount > 500) {
             this.iconPath = new vscode.ThemeIcon('file-text');
         }
@@ -76,11 +76,11 @@ class SummaryProvider {
     }
     getChildren(element) {
         if (!element) {
-            // Root level - show all summaries
+            // Show all summaries at root level
             return Promise.resolve(this.summaries.map(summary => new SummaryItem(summary, vscode.TreeItemCollapsibleState.Collapsed)));
         }
         else if (element instanceof SummaryItem) {
-            // Show summary details
+            // Show details when summary is expanded
             const summary = element.summary;
             return Promise.resolve([
                 new SummaryDetailItem('Summary', summary.summary.substring(0, 100) + '...'),
@@ -91,18 +91,18 @@ class SummaryProvider {
         }
         return Promise.resolve([]);
     }
-    async addSummary(originalText, source) {
+    async addSummary(text, source) {
         try {
-            const summaryText = await this.aiService.summarize(originalText);
+            const summaryText = await this.aiService.summarize(text);
             const summary = {
                 id: this.generateId(),
-                originalText: originalText.trim(),
+                text: text.trim(),
                 summary: summaryText.trim(),
                 timestamp: new Date(),
-                wordCount: originalText.trim().split(/\s+/).length,
+                wordCount: text.trim().split(/\s+/).length,
                 source
             };
-            this.summaries.unshift(summary); // Add to beginning
+            this.summaries.unshift(summary);
             await this.saveSummaries();
             this.refresh();
         }
@@ -160,7 +160,7 @@ class SummaryProvider {
             markdown += `**Word Count:** ${summary.wordCount}\n`;
             markdown += `**Source:** ${summary.source || 'Manual Selection'}\n\n`;
             markdown += `### Summary\n${summary.summary}\n\n`;
-            markdown += `### Original Text\n${summary.originalText}\n\n---\n\n`;
+            markdown += `### Original Text\n${summary.text}\n\n---\n\n`;
         });
         return markdown;
     }
@@ -176,7 +176,7 @@ class SummaryProvider {
             text += `Word Count: ${summary.wordCount}\n`;
             text += `Source: ${summary.source || 'Manual Selection'}\n\n`;
             text += `Summary: ${summary.summary}\n\n`;
-            text += `Original: ${summary.originalText}\n\n`;
+            text += `Original: ${summary.text}\n\n`;
             text += '='.repeat(50) + '\n\n';
         });
         return text;
@@ -189,14 +189,14 @@ class SummaryProvider {
             const data = await vscode.workspace.fs.readFile(this.storageUri);
             const jsonStr = Buffer.from(data).toString('utf8');
             const parsed = JSON.parse(jsonStr);
-            // Convert timestamp strings back to Date objects
+            // Convert saved timestamps back to Date objects
             this.summaries = parsed.map((s) => ({
                 ...s,
                 timestamp: new Date(s.timestamp)
             }));
         }
         catch (error) {
-            // File doesn't exist yet or is corrupted
+            // Start with empty list if no saved data
             this.summaries = [];
         }
     }
