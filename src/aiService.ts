@@ -1,4 +1,3 @@
-// === src/aiService.ts ===
 import * as vscode from 'vscode';
 import * as https from 'https';
 import * as http from 'http';
@@ -63,19 +62,19 @@ export class AIService {
                         if (jsonData && jsonData.response) {
                             resolve(this.cleanSummary(jsonData.response));
                         } else {
-                            reject(new Error('Invalid response from Ollama'));
+                            reject(new Error('Invalid response from Ollama service'));
                         }
                     } catch (error) {
-                        reject(new Error(`Failed to parse Ollama response: ${error}`));
+                        reject(new Error(`Failed to parse response: ${error}`));
                     }
                 });
             });
 
             req.on('error', (error) => {
                 if (error.message.includes('ECONNREFUSED')) {
-                    reject(new Error('Ollama is not running. Please start Ollama service.'));
+                    reject(new Error('Cannot connect to Ollama. Please make sure the service is running.'));
                 } else {
-                    reject(new Error(`Ollama request failed: ${error.message}`));
+                    reject(new Error(`Request failed: ${error.message}`));
                 }
             });
 
@@ -87,7 +86,7 @@ export class AIService {
     private async summarizeWithOpenAI(text: string, maxLength: number): Promise<string> {
         const apiKey = process.env.OPENAI_API_KEY;
         if (!apiKey) {
-            throw new Error('OpenAI API key not found in environment variables');
+            throw new Error('OpenAI API key not found. Please set your OPENAI_API_KEY environment variable.');
         }
 
         const postData = JSON.stringify({
@@ -135,7 +134,7 @@ export class AIService {
                             reject(new Error('Invalid response from OpenAI'));
                         }
                     } catch (error) {
-                        reject(new Error(`Failed to parse OpenAI response: ${error}`));
+                        reject(new Error(`Failed to parse response: ${error}`));
                     }
                 });
             });
@@ -150,14 +149,14 @@ export class AIService {
     }
 
     private createMockSummary(text: string, maxLength: number): Promise<string> {
-        // Mock summary for testing when no AI service is available
+        // Simple fallback when AI services are unavailable
         const words = text.split(' ');
         const summary = `This is a ${maxLength}-sentence summary of ${words.length} words. The text discusses various topics and concepts. Key points have been identified and condensed for clarity.`;
         return Promise.resolve(summary);
     }
 
     private cleanSummary(summary: string): string {
-        // Clean up the summary text
+        // Remove common AI response prefixes and clean formatting
         let cleaned = summary.replace(/^(Summary:|Here's a summary:|The text discusses:|This text is about:)\s*/i, '');
         cleaned = cleaned.replace(/\n\s*\n/g, ' ').replace(/\s+/g, ' ').trim();
         
