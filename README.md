@@ -1,4 +1,4 @@
-# SummerAIze
+# SummerAIze ⭐
 
 SummerAIze is a Visual Studio Code extension that generates concise summaries of selected text using AI. Summaries are stored and organized within a dedicated sidebar, making it easier to manage and review information. This tool is useful for developers, researchers, and students who frequently work with large volumes of text.
 
